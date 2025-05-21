@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
             message: 'Password must be between 8 and 255 characters'
         }
     },
-    "phoneNumebr": {
+    "phoneNumber": {
         type: String,
         required: true,
     },
@@ -67,5 +67,23 @@ userSchema.pre('save', function (next) {
         next();
     }
 });
+
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  
+  this.resetPasswordExpires = Date.now() + (3600000 * 24 *30);
+  
+  return resetToken;
+};
+
+userSchema.methods.clearResetToken = function() {
+  this.resetPasswordToken = undefined;
+  this.resetPasswordExpires = undefined;
+};
 
 export default mongoose.model.User || mongoose.model('User', userSchema);

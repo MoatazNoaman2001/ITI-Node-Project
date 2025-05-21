@@ -2,6 +2,66 @@ const crypto = require('crypto');
 const UserModel = require('../models/user');
 const { transporter, mailSchema } = require('../utils/smtp.js');
 
+exports.createUser = async (req, res) => {
+    try {
+        const user = new UserModel({
+            name: req.body.name,
+            email: req.body.email,
+            password: req.body.password,
+            phoneNumber: req.body.phoneNumber,
+            address: req.body.address,
+            role: req.body.role,
+            createdAt: new Date(),
+        });
+        const savedUser = await user.save();
+        let token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.SECRET, { expiresIn: '30h' })
+        res.status(200).json({
+            "status": "success",
+            "token": token,
+            "user": savedUser
+        });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+}
+export const loginUser = async (req, res) => {
+    try {
+        const email = req.body.email;
+        const password = req.body.password;
+        if (!email || !password) {
+            return res.status(500).json({
+                "title": "failed",
+                "message": "email and password are must"
+            })
+        }
+        let user = await userModel.findOne({ email: email });
+        if (!user) {
+            return res.status(404).json({
+                status: "fail",
+                message: `email with ${email} is not exist`
+            })
+        }
+
+        let isValid = await bcrypt.compare(password, user.password)
+
+        if (!isValid) {
+            return res.status(401).json({
+                status: "fail",
+                message: "invalid email or password aaaa"
+            })
+        }
+
+
+        let token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.SECRET, { expiresIn: '30d' })
+        res.status(200).json({
+            status: "success",
+            token: token
+        })
+    } catch (err) {
+        res.status(500).json(err);
+    }
+}
+
 
 const forgotPassword = async (req, res) => {
     try {
@@ -56,151 +116,151 @@ const forgotPassword = async (req, res) => {
             message: "An error occurred, please try again later"
         });
     }
-    const resetPassword = async (req, res) => {
-        try {
-            const { token } = req.params;
 
-            const resetPasswordToken = crypto
-                .createHash('sha256')
-                .update(token)
-                .digest('hex');
-            const user = await UserModel.findOne({
-                resetPasswordToken,
-                resetPasswordExpires: { $gt: Date.now() }
+}
+const resetPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        const resetPasswordToken = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex');
+        const user = await UserModel.findOne({
+            resetPasswordToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or expired token"
             });
+        }
 
-            if (!user) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid or expired token"
-                });
-            }
+        user.password = password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
 
-            user.password = password;
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpires = undefined;
+        await user.save();
 
-            await user.save();
-
-            await transporter.sendMail(mailSchema(
-                user.email,
-                'Password Reset Successful',
-                `
+        await transporter.sendMail(mailSchema(
+            user.email,
+            'Password Reset Successful',
+            `
               <h1>Password Reset Successful</h1>
               <p>Your password has been successfully reset.</p>
               <p>If you didn't reset your password, please contact support immediately.</p>
             `
-            ));
+        ));
 
-            res.status(200).json({
-                success: true,
-                message: "Password reset successful"
-            });
+        res.status(200).json({
+            success: true,
+            message: "Password reset successful"
+        });
 
-        } catch (error) {
-            console.error('Reset password error:', error);
-            res.status(500).json({
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred, please try again later"
+        });
+    }
+};
+const sendVerificationEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await UserModel.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({
                 success: false,
-                message: "An error occurred, please try again later"
+                message: "User not found"
             });
         }
-    };
 
-    const sendVerificationEmail = async (req, res) => {
-        try {
-            const { email } = req.body;
-            const user = await UserModel.findOne({ email });
+        const verificationToken = crypto.randomBytes(32).toString('hex');
 
-            if (!user) {
-                return res.status(404).json({
-                    success: false,
-                    message: "User not found"
-                });
-            }
+        user.verificationToken = crypto
+            .createHash('sha256')
+            .update(verificationToken)
+            .digest('hex');
+        user.verificationExpires = Date.now() + 24 * 3600000;
 
-            const verificationToken = crypto.randomBytes(32).toString('hex');
+        await user.save();
 
-            user.verificationToken = crypto
-                .createHash('sha256')
-                .update(verificationToken)
-                .digest('hex');
-            user.verificationExpires = Date.now() + 24 * 3600000;
+        const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
-            await user.save();
-
-            const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
-
-            await transporter.sendMail(mailSchema(
-                user.email,
-                'Email Verification',
-                `
+        await transporter.sendMail(mailSchema(
+            user.email,
+            'Email Verification',
+            `
               <h1>Email Verification</h1>
               <p>Please click on the following link to verify your email:</p>
               <a href="${verificationUrl}" target="_blank">Verify Email</a>
               <p>This link will expire in 24 hours.</p>
             `
-            ));
+        ));
 
 
-            res.status(200).json({
-                success: true,
-                message: "Verification email sent"
-            });
+        res.status(200).json({
+            success: true,
+            message: "Verification email sent"
+        });
 
-        } catch (error) {
-            console.error('Send verification email error:', error);
-            res.status(500).json({
+    } catch (error) {
+        console.error('Send verification email error:', error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred, please try again later"
+        });
+    }
+};
+
+const verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        const verificationToken = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex');
+
+        const user = await UserModel.findOne({
+            verificationToken,
+            verificationExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
                 success: false,
-                message: "An error occurred, please try again later"
+                message: "Invalid or expired token"
             });
         }
-    };
 
-    const verifyEmail = async (req, res) => {
-        try {
-            const { token } = req.params;
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        user.verificationExpires = undefined;
 
-            const verificationToken = crypto
-                .createHash('sha256')
-                .update(token)
-                .digest('hex');
+        await user.save();
 
-            const user = await UserModel.findOne({
-                verificationToken,
-                verificationExpires: { $gt: Date.now() }
-            });
+        res.status(200).json({
+            success: true,
+            message: "Email verified successfully"
+        });
 
-            if (!user) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid or expired token"
-                });
-            }
+    } catch (error) {
+        console.error('Email verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred, please try again later"
+        });
+    }
+};
 
-            user.isVerified = true;
-            user.verificationToken = undefined;
-            user.verificationExpires = undefined;
-
-            await user.save();
-
-            res.status(200).json({
-                success: true,
-                message: "Email verified successfully"
-            });
-
-        } catch (error) {
-            console.error('Email verification error:', error);
-            res.status(500).json({
-                success: false,
-                message: "An error occurred, please try again later"
-            });
-        }
-    };
-
-    module.exports = {
-        forgotPassword,
-        resetPassword,
-        sendVerificationEmail,
-        verifyEmail
-    };
-}
+module.exports = {
+    forgotPassword,
+    resetPassword,
+    sendVerificationEmail,
+    verifyEmail
+};
