@@ -5,7 +5,8 @@ const {        forgotPassword,
     verifyEmail} = require('../controllers/userControllers');
 
 
-
+router.post('/login', loginUser);
+router.post('/register', createUser);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/send-verification-email', sendVerificationEmail);

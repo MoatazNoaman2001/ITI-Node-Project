@@ -259,6 +259,8 @@ const verifyEmail = async (req, res) => {
 };
 
 module.exports = {
+    loginUser,
+    createUser,
     forgotPassword,
     resetPassword,
     sendVerificationEmail,
