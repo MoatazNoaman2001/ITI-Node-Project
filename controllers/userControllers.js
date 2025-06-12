@@ -1,9 +1,12 @@
-const crypto = require('crypto');
-const UserModel = require('../models/user');
-const { transporter, mailSchema } = require('../utils/smtp.js');
+import crypto from 'crypto';
+import UserModel from '../models/user.js';
+import jwt from "jsonwebtoken";
+import { transporter, mailSchema } from '../utils/smtp.js';
 
-exports.createUser = async (req, res) => {
+export const createUser = async (req, res) => {
     try {
+        console.log(`res.body: ${JSON.stringify(req.body)}`);
+        
         const user = new UserModel({
             name: req.body.name,
             email: req.body.email,
@@ -14,13 +17,17 @@ exports.createUser = async (req, res) => {
             createdAt: new Date(),
         });
         const savedUser = await user.save();
-        let token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.SECRET, { expiresIn: '30h' })
+        console.log('saved');
+        let token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.SECRET, { expiresIn: '30d' })
+        console.log(`jwt: ${token}`);
         res.status(200).json({
             "status": "success",
             "token": token,
             "user": savedUser
         });
     } catch (err) {
+        console.log(`error: ${err}`);
+        
         res.status(500).json(err);
     }
 }
@@ -34,7 +41,7 @@ export const loginUser = async (req, res) => {
                 "message": "email and password are must"
             })
         }
-        let user = await userModel.findOne({ email: email });
+        let user = await UserModel.findOne({ email: email });
         if (!user) {
             return res.status(404).json({
                 status: "fail",
@@ -42,7 +49,9 @@ export const loginUser = async (req, res) => {
             })
         }
 
-        let isValid = await bcrypt.compare(password, user.password)
+        console.log(`password: ${password}, userPassword: ${user.password}`);
+        
+        let isValid = user.comparePassword(password)
 
         if (!isValid) {
             return res.status(401).json({
@@ -58,16 +67,17 @@ export const loginUser = async (req, res) => {
             token: token
         })
     } catch (err) {
+        console.log(`error: ${err}`);
+        
         res.status(500).json(err);
     }
 }
 
 
-const forgotPassword = async (req, res) => {
+export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
-        // Find the user
         const user = await UserModel.findOne({ email });
         if (!user) {
             return res.status(404).json({
@@ -118,14 +128,16 @@ const forgotPassword = async (req, res) => {
     }
 
 }
-const resetPassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
     try {
-        const { token } = req.params;
+        const { token, password } = req.body;
 
         const resetPasswordToken = crypto
             .createHash('sha256')
             .update(token)
             .digest('hex');
+        console.log(`resetPassToken: ${resetPasswordToken}`);
+        
         const user = await UserModel.findOne({
             resetPasswordToken,
             resetPasswordExpires: { $gt: Date.now() }
@@ -167,7 +179,7 @@ const resetPassword = async (req, res) => {
         });
     }
 };
-const sendVerificationEmail = async (req, res) => {
+export const sendVerificationEmail = async (req, res) => {
     try {
         const { email } = req.body;
         const user = await UserModel.findOne({ email });
@@ -217,7 +229,7 @@ const sendVerificationEmail = async (req, res) => {
     }
 };
 
-const verifyEmail = async (req, res) => {
+export const verifyEmail = async (req, res) => {
     try {
         const { token } = req.params;
 
@@ -256,13 +268,4 @@ const verifyEmail = async (req, res) => {
             message: "An error occurred, please try again later"
         });
     }
-};
-
-module.exports = {
-    loginUser,
-    createUser,
-    forgotPassword,
-    resetPassword,
-    sendVerificationEmail,
-    verifyEmail
 };

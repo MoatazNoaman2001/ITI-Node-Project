@@ -1,49 +1,48 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema({
     "name": {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     "email": {
         type: String,
         required: true,
         unique: true,
+        trim: true,
+        lowercase: true,
         validate: {
-            isEmail: true,
+            validator: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
             message: 'Invalid email format'
         }
     },
     "password": {
         type: String,
         required: true,
+        select: false,
         validate: {
-            len: [8, 255],
-            message: 'Password must be between 8 and 255 characters'
+            validator: (v) => v.length >= 8,
+            message: 'Password must be at least 8 characters'
         }
     },
     "phoneNumber": {
         type: String,
-        required: true,
+        required: true
     },
     "address": {
         type: String,
-        required: true,
+        required: true
     },
-    "role" : {
+    "role": {
         type: String,
         enum: ['seller', 'user'],
         default: 'user'
     },
-    "resetPasswordToken": {
-        type: String,
-        default: null
-    },
-    "resetPasswordExpires": {
-        type: Date,
-        default: null
-    },
+    "resetPasswordToken": String,
+    "resetPasswordExpires": Date,
     "createdAt": {
         type: Date,
         default: Date.now
@@ -52,38 +51,41 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-
 });
 
-userSchema.pre('save', function (next) {
-    if (this.isModified('password')) {
-        const saltRounds = 10;
-        bcrypt.hash(this.password, saltRounds, (err, hash) => {
-            if (err) return next(err);
-            this.password = hash;
-            next();
-        });
-    } else {
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) return next();
+    
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
         next();
+    } catch (err) {
+        next(err);
     }
 });
 
-userSchema.methods.createPasswordResetToken = function() {
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  
-  this.resetPasswordToken = crypto
-    .createHash('sha256')
-    .update(resetToken)
-    .digest('hex');
-  
-  this.resetPasswordExpires = Date.now() + (3600000 * 24 *30);
-  
-  return resetToken;
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
+
+userSchema.methods.createResetToken = function() {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    this.resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+    
+    this.resetPasswordExpires = Date.now() + 24 * 60 * 60 * 1000;
+    
+    return resetToken;
 };
 
 userSchema.methods.clearResetToken = function() {
-  this.resetPasswordToken = undefined;
-  this.resetPasswordExpires = undefined;
+    this.resetPasswordToken = undefined;
+    this.resetPasswordExpires = undefined;
 };
 
-export default mongoose.model.User || mongoose.model('User', userSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+export default User;

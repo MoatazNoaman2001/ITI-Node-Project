@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
  
 
-const auth = (req, res, next) => {
+export const auth = (req, res, next) => {
     const { authorization } = req.headers;
 
     if (!authorization) {
@@ -26,7 +26,7 @@ const auth = (req, res, next) => {
 
 }
 
-const restrectTo = (...roles) =>{
+export const restrectTo = (...roles) =>{
     return (req, res, next) =>{
         if (!roles.contains(req.role)){
             return res.status(403).json({
@@ -38,5 +38,3 @@ const restrectTo = (...roles) =>{
         }
     }
 }
-
-export default [auth , restrectTo];

@@ -1,8 +1,8 @@
-const dotenv = require('dotenv');
-const nodemailer = require('nodemailer');
+import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
+export const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const mailSchema = (to, subject, text) => {
+export const mailSchema = (to, subject, text) => {
     return {
         from: process.env.EMAIL_USER,
         to: to,
@@ -23,5 +23,3 @@ const mailSchema = (to, subject, text) => {
         text: text
     };
 }
-
-module.exports = { transporter, mailSchema };

@@ -1,4 +1,4 @@
-const { default: mongoose } = require("mongoose");
+import mongoose from "mongoose";
 
 const reviewsSchema = new mongoose.Schema({
     "userId": {
@@ -29,4 +29,7 @@ const reviewsSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-})
+});
+
+
+export default mongoose.model.Review || mongoose.model("Review" , reviewsSchema);

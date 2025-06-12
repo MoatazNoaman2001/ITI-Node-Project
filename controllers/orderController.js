@@ -1,8 +1,8 @@
-const Order = require('../models/order');
-const Cart = require('../models/cart');
-const Product = require('../models/product');
+import Order from '../models/order.js';
+import Cart from '../models/cart.js';
+import Product from '../models/product.js';
 
-const createOrder = async (req, res) => {
+export const createOrder = async (req, res) => {
     try {
         const userId = req.user.id;
         const { shippingAddress, paymentMethod } = req.body;
@@ -41,7 +41,7 @@ const createOrder = async (req, res) => {
     }
 };
 
-const getUserOrders = async (req, res) => {
+export const getUserOrders = async (req, res) => {
     try {
         const userId = req.user.id;
         const orders = await Order.find({ user: userId })
@@ -54,7 +54,7 @@ const getUserOrders = async (req, res) => {
     }
 };
 
-const getOrderDetails = async (req, res) => {
+export const getOrderDetails = async (req, res) => {
     try {
         const { orderId } = req.params;
         const userId = req.user.id;
@@ -72,7 +72,7 @@ const getOrderDetails = async (req, res) => {
     }
 };
 
-const updateOrderStatus = async (req, res) => {
+export const updateOrderStatus = async (req, res) => {
     try {
         const { orderId, status } = req.params;
         const userId = req.user.id;
@@ -91,7 +91,7 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
-const getAllOrders = async (req, res) => {
+export const getAllOrders = async (req, res) => {
     try {
 
         const orders = await Order.find()
@@ -104,12 +104,3 @@ const getAllOrders = async (req, res) => {
         res.status(500).json({ message: 'Error fetching all orders', error: error.message });
     }
 };
-
-
-module.exports = {
-    createOrder, 
-    getUserOrders, 
-    getOrderDetails, 
-    updateOrderStatus, 
-    getAllOrders
-}

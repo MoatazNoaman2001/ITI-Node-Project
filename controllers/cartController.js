@@ -1,7 +1,7 @@
-const Cart = require('../models/cart');
-const Product = require('../models/product');
+import Cart from '../models/cart.js';
+import Product from '../models/product.js';
 
-const addToCart = async (req, res) => {
+export const addToCart = async (req, res) => {
     try {
         const { productId, quantity } = req.body;
         const userId = req.user.id;
@@ -41,7 +41,7 @@ const addToCart = async (req, res) => {
     }
 };
 
-const getCart = async (req, res) => {
+export const getCart = async (req, res) => {
     try {
         const userId = req.user.id;
         const cart = await Cart.findOne({ user: userId }).populate('items.product');
@@ -56,7 +56,7 @@ const getCart = async (req, res) => {
     }
 };
 
-const updateCartItem = async (req, res) => {
+export const updateCartItem = async (req, res) => {
     try {
         const { productId, quantity } = req.body;
         const userId = req.user.id;
@@ -80,7 +80,7 @@ const updateCartItem = async (req, res) => {
     }
 };
 
-const removeFromCart = async (req, res) => {
+export const removeFromCart = async (req, res) => {
     try {
         const { productId } = req.params;
         const userId = req.user.id;
@@ -99,7 +99,7 @@ const removeFromCart = async (req, res) => {
     }
 };
 
-const clearCart = async (req, res) => {
+export const clearCart = async (req, res) => {
     try {
         const userId = req.user.id;
         const cart = await Cart.findOne({ user: userId });
@@ -114,11 +114,3 @@ const clearCart = async (req, res) => {
         res.status(500).json({ message: 'Error clearing cart', error: error.message });
     }
 };
-
-module.exports = {
-    addToCart, 
-    getCart, 
-    updateCartItem, 
-    removeFromCart,
-    clearCart
-}

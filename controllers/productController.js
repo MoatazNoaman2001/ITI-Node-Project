@@ -1,6 +1,6 @@
-const Product = require("../models/product");
+import Product from "../models/product.js";
 
-const GetAllProducts = async (req, res) => {
+export const GetAllProducts = async (req, res) => {
     const { page = 1, limit = 10, name ='', isAsc = false } = req.query;
     const sort = isAsc ? 1 : -1;
     const products = await Product.find({ name: { $regex: name, $options: 'i' } })
@@ -19,7 +19,7 @@ const GetAllProducts = async (req, res) => {
 };
 
 
-const GetProductById = async (req, res) => {
+export const GetProductById = async (req, res) => {
     const { id } = req.params;
     const product = await Product.findById(id);
     if (!product) {
@@ -30,7 +30,7 @@ const GetProductById = async (req, res) => {
     }
 };
 
-const StoreProduct = async (req, res) => {
+export const StoreProduct = async (req, res) => {
     const { name, description, price, stock, sellerId, photos } = req.body;
     const product = new Product({
         name,
@@ -48,7 +48,7 @@ const StoreProduct = async (req, res) => {
     });
 }
 
-const UpdateProduct = async (req, res) => {
+export const UpdateProduct = async (req, res) => {
     const { id } = req.params;
     const { name, description, price, stock, sellerId, photos } = req.body;
     const product = await Product.findByIdAndUpdate(id, {
@@ -71,7 +71,7 @@ const UpdateProduct = async (req, res) => {
         data: product
     });
 }
-const DeleteProduct = async (req, res) => {
+export const DeleteProduct = async (req, res) => {
     const { id } = req.params;
     const product = await Product.findByIdAndDelete(id);
     if (!product) {
@@ -86,7 +86,7 @@ const DeleteProduct = async (req, res) => {
         data: product
     });
 }
-const SearchProduct = async (req, res) => {
+export const SearchProduct = async (req, res) => {
     const { name } = req.query;
     const products = await Product.find({ name: { $regex: name, $options: 'i' } });
     if (products.length === 0) {
@@ -95,12 +95,4 @@ const SearchProduct = async (req, res) => {
             message: "No products found"
         });
     }
-}
-module.exports = {
-    GetAllProducts,
-    GetProductById,
-    StoreProduct,
-    UpdateProduct,
-    DeleteProduct,
-    SearchProduct
 }

@@ -1,15 +1,17 @@
-const router  = require("express").Router();
-const Product = require("../models/product");
+import express from 'express';
+const productRouter = express.Router();
+import Product from "../models/product.js";
 import { GetAllProducts, GetProductById, StoreProduct, 
-    UpdateProduct, DeleteProduct, SearchProduct
- } from "../controllers/productController";
-import { auth, restrectTo } from "../middelwares/auth";
+    UpdateProduct, SearchProduct,
+    DeleteProduct
+ } from "../controllers/productController.js";
+import { auth, restrectTo } from "../middelwares/auth.js";
 
-router.get("/", GetAllProducts);
-router.get("/:id",auth, restrectTo("seller", "user"), GetProductById);
-router.post("/",auth, restrectTo("seller"), StoreProduct);
-router.put("/:id",auth, restrectTo("seller"), UpdateProduct);
-router.delete("/:id",auth, restrectTo("seller"), DeleteProduct);
-router.get("/search",auth, restrectTo("seller", "user"), SearchProduct);
+productRouter.get("/", GetAllProducts);
+productRouter.get("/:id",auth, restrectTo("seller", "user"), GetProductById);
+productRouter.post("/",auth, restrectTo("seller"), StoreProduct);
+productRouter.put("/:id",auth, restrectTo("seller"), UpdateProduct);
+productRouter.delete("/:id",auth, restrectTo("seller"), DeleteProduct);
+productRouter.get("/search",auth, restrectTo("seller", "user"), SearchProduct);
 
-module.exports = router;
+export default  productRouter;

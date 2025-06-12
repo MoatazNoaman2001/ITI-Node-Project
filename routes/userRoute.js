@@ -1,15 +1,18 @@
-const router = require('express').Router();
-const {        forgotPassword,
+import express from 'express';
+const userRouter = express.Router();
+
+import {createUser, forgotPassword,
+    loginUser,
     resetPassword,
     sendVerificationEmail,
-    verifyEmail} = require('../controllers/userControllers');
+    verifyEmail} from  '../controllers/userControllers.js';
 
 
-router.post('/login', loginUser);
-router.post('/register', createUser);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
-router.post('/send-verification-email', sendVerificationEmail);
-router.get('/verify-email/:token', verifyEmail);
+userRouter.post('/login', loginUser);
+userRouter.post('/register', createUser);
+userRouter.post('/forgot-password', forgotPassword);
+userRouter.post('/reset-password', resetPassword);
+userRouter.post('/send-verification-email', sendVerificationEmail);
+userRouter.get('/verify-email/:token', verifyEmail);
 
-module.exports = router;
+export default userRouter;

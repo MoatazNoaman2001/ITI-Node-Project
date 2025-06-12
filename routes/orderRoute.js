@@ -1,17 +1,18 @@
-const router = require('express').Router();
-const { auth, restrectTo } = require('../middelwares/auth');
-const { 
+import express from 'express';
+const orderRouter = express.Router();
+import { 
     createOrder, 
     getUserOrders, 
     getOrderDetails, 
     updateOrderStatus, 
     getAllOrders 
-} = require('../controllers/orderController');
+} from '../controllers/orderController.js';
+import { auth, restrectTo } from '../middelwares/auth.js';
 
-router.post('/', auth, createOrder);
-router.get('/', auth, getUserOrders);
-router.get('/:orderId', auth, getOrderDetails);
-router.put('/:orderId/status/:status', auth, restrectTo('admin'), updateOrderStatus);
-router.get('/all', auth, restrectTo('admin'), getAllOrders);
+orderRouter.post('/', auth, createOrder);
+orderRouter.get('/', auth, getUserOrders);
+orderRouter.get('/:orderId', auth, getOrderDetails);
+orderRouter.put('/:orderId/status/:status', auth, restrectTo('seller'), updateOrderStatus);
+orderRouter.get('/all', auth, restrectTo('seller'), getAllOrders);
 
-module.exports = router;
+export default orderRouter;

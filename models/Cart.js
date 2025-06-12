@@ -1,4 +1,4 @@
-const { default: mongoose } = require("mongoose");
+import mongoose from "mongoose";
 
 const cartSchema = new mongoose.Schema({
     "userId": {
@@ -36,4 +36,6 @@ const cartSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-})
+});
+
+export default mongoose.model.Cart || mongoose.model("Cart" , cartSchema);
